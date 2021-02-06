@@ -6,6 +6,7 @@
 import scrapy
 
 class IndeedItem(scrapy.Item):
+    # Scraped in Spider
     indeed_url = scrapy.Field()
     indeed_job_key = scrapy.Field()
     job_title = scrapy.Field()
@@ -16,3 +17,11 @@ class IndeedItem(scrapy.Item):
     job_description = scrapy.Field()
     original_url = scrapy.Field()
     posted_when = scrapy.Field()
+    salary = scrapy.Field()
+
+    # Created in Pipeline
+    num_stars = scrapy.Field()
+    num_reviews = scrapy.Field()
+    job_salary_low = scrapy.Field()
+    job_salary_high = scrapy.Field()
+    post_date = scrapy.Field()

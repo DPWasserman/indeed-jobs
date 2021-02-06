@@ -39,6 +39,7 @@ class IndeedSpider(Spider):
         job_description = ''.join(job_description_texts)
         original_url = response.css('div#originalJobLinkContainer a').attrib['href']
         posted_when = response.css('div.jobsearch-JobMetadataFooter div::text').getall()[1]
+        salary = response.css('div.jobsearch-JobDescriptionSection-sectionItem span').get()
 
         item = IndeedItem()
 
@@ -50,6 +51,7 @@ class IndeedSpider(Spider):
         response.meta['job_location'] = job_location
         response.meta['job_description'] = job_description
         response.meta['posted_when'] = posted_when
+        reponse.meta['salary'] = salary
 
         yield Request(url = original_url, callback=self.resolve_redirected_url, meta=response.meta)
         
@@ -69,6 +71,7 @@ class IndeedSpider(Spider):
         item['job_description'] = response.meta['job_description']
         item['original_url'] = original_url
         item['posted_when'] = response.meta['posted_when']
+        item['salary'] = response.meta['salary']
 
         yield item
 
