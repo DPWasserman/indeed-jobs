@@ -51,7 +51,7 @@ class IndeedSpider(Spider):
         response.meta['job_location'] = job_location
         response.meta['job_description'] = job_description
         response.meta['posted_when'] = posted_when
-        reponse.meta['salary'] = salary
+        response.meta['salary'] = salary
 
         yield Request(url = original_url, callback=self.resolve_redirected_url, meta=response.meta)
         
