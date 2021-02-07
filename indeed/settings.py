@@ -63,7 +63,8 @@ DOWNLOAD_DELAY = 0.25 # Set to an appropriate number
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-#    'indeed.pipelines.IndeedPipeline': 300,
+    'indeed.pipelines.DuplicatesPipeline': 250,
+#    'indeed.pipelines.CleansePipeline': 200,
     'indeed.pipelines.WriteItemPipeline': 300,
 }
 
