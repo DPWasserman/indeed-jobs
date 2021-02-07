@@ -1,5 +1,6 @@
 from scrapy import Spider, Request
 from indeed.items import IndeedItem
+import datetime
 import re
 from urllib.parse import parse_qs, urljoin, urlparse
 import logging
@@ -13,7 +14,7 @@ class IndeedSpider(Spider):
         url_pattern = self.start_urls[0] + '&start={}'
         urls = [url_pattern.format(i*10) for i in range(10)]
 
-        for url in urls[:2]: # Parse first two pages only
+        for url in urls[:3]: # Parse first two pages only
             yield Request(url=url, callback=self.parse_jobs_page)
 
     def parse_jobs_page(self, response):
@@ -43,8 +44,9 @@ class IndeedSpider(Spider):
         posted_when_block = response.css('div.jobsearch-JobMetadataFooter div::text').getall()
         posted_when = None
         for post in posted_when_block:
-            posted_when = re.search('(Just posted)|(day[s]* ago)', post)
+            posted_when = re.findall(r'(Just posted|\d+ day[s]* ago)', post)
             if posted_when:
+                posted_when = posted_when[0]
                 break
 
         salary = response.css('div.jobsearch-JobDescriptionSection-sectionItem span').xpath('.//text()').get()
@@ -62,16 +64,20 @@ class IndeedSpider(Spider):
         response.meta['salary'] = salary
 
         if not original_url: # Sometimes there is no original post link
-            original_url = response.css('div#indeedApplyButtonContainer').xpath('.//span/@data-indeed-apply-continueurl').get()
-            logging.warning(f'\nRedirect from {response.url} \nto : {original_url}\n')
-        if not original_url:
             response.meta['original_url'] = response.url
             yield self.store_item(response.meta)
-        else:    
-            yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
+        else: 
+            try:   
+                yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
+            except:
+                print('\n\nAlternate path!\n\n')
+                response.meta['original_url'] = response.url
+                yield self.store_item(response.meta)
 
 
-    def resolve_redirected_url(self, response):
+    def resolve_redirected_url(self, response): 
+        # NOTE: This procedure will fail when there is no slash between the domain and the querystring!
+        # TODO: Fix in Middlewares as per https://stackoverflow.com/questions/53322247/scrapy-view-redirect-to-other-page-and-get-400-error/53323565#53323565
         response.meta['original_url'] = response.url
         yield self.store_item(response.meta)
 
@@ -79,10 +85,9 @@ class IndeedSpider(Spider):
     def store_item(self, data_dict):
         item = IndeedItem()
 
+        # Raw scraped information
         item['search_page_url'] = data_dict['search_page_url']
         item['indeed_url'] = data_dict['indeed_url']
-        parsed = urlparse(data_dict['indeed_url'])
-        item['indeed_job_key'] = parse_qs(parsed.query).get('jk')[0]
         item['job_title'] = data_dict['job_title']
         item['company_name'] = data_dict['company_name']
         item['company_url'] = data_dict['company_url']
@@ -92,5 +97,29 @@ class IndeedSpider(Spider):
         item['original_url'] = data_dict['original_url']
         item['posted_when'] = data_dict['posted_when']
         item['salary'] = data_dict['salary']
+
+        # Calculated information
+        parsed = urlparse(data_dict['indeed_url'])
+        item['indeed_job_key'] = parse_qs(parsed.query).get('jk')[0]
+
+        if data_dict['company_reviews']:
+            num_stars, _, num_reviews = re.findall(r'^([\d.]+) out of (\d) from ([\d,]+) employee rating', data_dict['company_reviews'])[0]
+            item['num_stars'] = float(num_stars)
+            item['num_reviews'] = int(num_reviews.replace(',',''))
+
+        if data_dict['salary']:
+            salary_range = re.findall(r'\$([\d,]+) - \$([\d,]+)', data_dict['salary'])[0]
+            job_salary_low = salary_range[0]
+            job_salary_high = salary_range[-1]
+            item['job_salary_low'] = int(job_salary_low.replace(',',''))
+            item['job_salary_high'] = int(job_salary_high.replace(',',''))
+
+        if data_dict['posted_when']:
+            if data_dict['posted_when'] == 'Just posted':
+                days_ago = 0
+            else:
+                days_ago = int(re.findall(r'(\d+)', data_dict['posted_when'])[0])
+            post_date = datetime.datetime.now() - datetime.timedelta(days = days_ago)
+            item['post_date'] = post_date.date()
 
         return item
