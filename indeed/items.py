@@ -7,6 +7,7 @@ import scrapy
 
 class IndeedItem(scrapy.Item):
     # Scraped in Spider
+    search_page_url = scrapy.Field()
     indeed_url = scrapy.Field()
     indeed_job_key = scrapy.Field()
     job_title = scrapy.Field()
