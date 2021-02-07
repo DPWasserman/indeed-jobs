@@ -76,8 +76,6 @@ class IndeedSpider(Spider):
 
 
     def resolve_redirected_url(self, response): 
-        # NOTE: This procedure will fail when there is no slash between the domain and the querystring!
-        # TODO: Fix in Middlewares as per https://stackoverflow.com/questions/53322247/scrapy-view-redirect-to-other-page-and-get-400-error/53323565#53323565
         response.meta['original_url'] = response.url
         yield self.store_item(response.meta)
 
@@ -108,7 +106,7 @@ class IndeedSpider(Spider):
             item['num_reviews'] = int(num_reviews.replace(',',''))
 
         if data_dict['salary']:
-            salary_range = re.findall(r'\$([\d,]+) - \$([\d,]+)', data_dict['salary'])[0]
+            salary_range = re.findall(r'\$([\d,]+)', data_dict['salary'])
             job_salary_low = salary_range[0]
             job_salary_high = salary_range[-1]
             item['job_salary_low'] = int(job_salary_low.replace(',',''))
