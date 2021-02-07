@@ -63,16 +63,11 @@ class IndeedSpider(Spider):
         response.meta['posted_when'] = posted_when
         response.meta['salary'] = salary
 
-        if not original_url: # Sometimes there is no original post link
+        if original_url:
+            yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
+        else: # Sometimes there is no original post link
             response.meta['original_url'] = response.url
-            yield self.store_item(response.meta)
-        else: 
-            try:   
-                yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
-            except:
-                print('\n\nAlternate path!\n\n')
-                response.meta['original_url'] = response.url
-                yield self.store_item(response.meta)
+            yield self.store_item(response.meta)            
 
 
     def resolve_redirected_url(self, response): 
