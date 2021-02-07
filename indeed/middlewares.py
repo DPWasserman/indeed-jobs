@@ -103,7 +103,8 @@ class IndeedDownloaderMiddleware:
         spider.logger.info('Spider opened: %s' % spider.name)
 
 class FixLocationHeaderMiddleWare:
-
+    # Taken from https://github.com/scrapy/scrapy/issues/1133
+    # Used to handle URLs that do not have slashes between domain and querystring
     def process_response(self, request, response, spider):
         if 'location' in response.headers:
             response.headers['location'] = canonicalize_url(response.headers['location'])
