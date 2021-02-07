@@ -4,10 +4,10 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
-
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
 
+from w3lib.url import canonicalize_url
 
 class IndeedSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -101,3 +101,10 @@ class IndeedDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+class FixLocationHeaderMiddleWare:
+
+    def process_response(self, request, response, spider):
+        if 'location' in response.headers:
+            response.headers['location'] = canonicalize_url(response.headers['location'])
+        return response
