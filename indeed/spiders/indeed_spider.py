@@ -1,7 +1,8 @@
 from scrapy import Spider, Request
 from indeed.items import IndeedItem
+import re
 from urllib.parse import parse_qs, urljoin, urlparse
-
+import logging
 
 class IndeedSpider(Spider):
     name = 'indeed_spider'
@@ -12,7 +13,7 @@ class IndeedSpider(Spider):
         url_pattern = self.start_urls[0] + '&start={}'
         urls = [url_pattern.format(i*10) for i in range(10)]
 
-        for url in urls[:1]:
+        for url in urls[:2]: # Parse first two pages only
             yield Request(url=url, callback=self.parse_jobs_page)
 
     def parse_jobs_page(self, response):
@@ -21,7 +22,8 @@ class IndeedSpider(Spider):
 
         for job in jobs:
             url = self.allowed_urls[0] + job
-            yield Request(url=url, callback=self.parse_job_page)
+            response.meta['search_page_url'] = response.url
+            yield Request(url=url, callback=self.parse_job_page, meta=response.meta)
 
     def parse_job_page(self, response):
         job_title = response.css('h1.jobsearch-JobInfoHeader-title::text').get()
@@ -37,11 +39,17 @@ class IndeedSpider(Spider):
         job_location = response.css('div.jobsearch-JobInfoHeader-subtitle div::text').getall()[-1]
         job_description_texts = response.css('div#jobDescriptionText').xpath('.//text()').getall()
         job_description = ''.join(job_description_texts)
-        original_url = response.css('div#originalJobLinkContainer a').attrib['href']
-        posted_when = response.css('div.jobsearch-JobMetadataFooter div::text').getall()[1]
-        salary = response.css('div.jobsearch-JobDescriptionSection-sectionItem span').get()
 
-        item = IndeedItem()
+        posted_when_block = response.css('div.jobsearch-JobMetadataFooter div::text').getall()
+        posted_when = None
+        for post in posted_when_block:
+            posted_when = re.search('(Just posted)|(day[s]* ago)', post)
+            if posted_when:
+                break
+
+        salary = response.css('div.jobsearch-JobDescriptionSection-sectionItem span').xpath('.//text()').get()
+
+        original_url = response.css('div#originalJobLinkContainer a').xpath('./@href').get()
 
         response.meta['indeed_url'] = response.url
         response.meta['job_title'] = job_title
@@ -53,26 +61,36 @@ class IndeedSpider(Spider):
         response.meta['posted_when'] = posted_when
         response.meta['salary'] = salary
 
-        yield Request(url = original_url, callback=self.resolve_redirected_url, meta=response.meta)
-        
-    def resolve_redirected_url(self, response):
-        original_url = response.url
+        if not original_url: # Sometimes there is no original post link
+            original_url = response.css('div#indeedApplyButtonContainer').xpath('.//span/@data-indeed-apply-continueurl').get()
+            logging.warning(f'\nRedirect from {response.url} \nto : {original_url}\n')
+        if not original_url:
+            response.meta['original_url'] = response.url
+            yield self.store_item(response.meta)
+        else:    
+            yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
 
+
+    def resolve_redirected_url(self, response):
+        response.meta['original_url'] = response.url
+        yield self.store_item(response.meta)
+
+
+    def store_item(self, data_dict):
         item = IndeedItem()
 
-        item['indeed_url'] = response.meta['indeed_url']
-        parsed = urlparse(response.meta['indeed_url'])
-        item['indeed_job_key'] = parse_qs(parsed.query).get('jk')
-        item['job_title'] = response.meta['job_title']
-        item['company_name'] = response.meta['company_name']
-        item['company_url'] = response.meta['company_url']
-        item['company_reviews'] = response.meta['company_reviews']
-        item['job_location'] = response.meta['job_location']
-        item['job_description'] = response.meta['job_description']
-        item['original_url'] = original_url
-        item['posted_when'] = response.meta['posted_when']
-        item['salary'] = response.meta['salary']
+        item['search_page_url'] = data_dict['search_page_url']
+        item['indeed_url'] = data_dict['indeed_url']
+        parsed = urlparse(data_dict['indeed_url'])
+        item['indeed_job_key'] = parse_qs(parsed.query).get('jk')[0]
+        item['job_title'] = data_dict['job_title']
+        item['company_name'] = data_dict['company_name']
+        item['company_url'] = data_dict['company_url']
+        item['company_reviews'] = data_dict['company_reviews']
+        item['job_location'] = data_dict['job_location']
+        item['job_description'] = data_dict['job_description']
+        item['original_url'] = data_dict['original_url']
+        item['posted_when'] = data_dict['posted_when']
+        item['salary'] = data_dict['salary']
 
-        yield item
-
-        
+        return item
