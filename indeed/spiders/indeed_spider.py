@@ -5,16 +5,19 @@ import re
 from urllib.parse import parse_qs, urljoin, urlparse
 import logging
 
+num_pages_to_scrape = 10
+
 class IndeedSpider(Spider):
     name = 'indeed_spider'
     allowed_urls = ['https://www.indeed.com']
-    start_urls = ['https://www.indeed.com/jobs?q=data+scientist&l=New+York%2C+NY&sort=date']
+    start_urls = ['https://www.indeed.com/jobs?q=data+scientist&l=New+York%2C+NY&sort=date',
+                   'https://www.indeed.com/jobs?q=data+scientist&l=San+Francisco%2C+CA&sort=date']
 
     def parse(self, response):
-        url_pattern = self.start_urls[0] + '&start={}'
-        urls = [url_pattern.format(i*10) for i in range(10)]
+        url_pattern = response.url + '&start={}'
+        urls = [url_pattern.format(i*10) for i in range(num_pages_to_scrape)]
 
-        for url in urls[:3]: # Parse first two pages only
+        for url in urls: # Parse first two pages only
             yield Request(url=url, callback=self.parse_jobs_page)
 
     def parse_jobs_page(self, response):
@@ -37,7 +40,11 @@ class IndeedSpider(Spider):
         if not company_name:
             company_name = response.css('div.jobsearch-JobInfoHeader-subtitle div.jobsearch-InlineCompanyRating div::text').get()
 
-        job_location = response.css('div.jobsearch-JobInfoHeader-subtitle div::text').getall()[-1]
+        try:
+            job_location = response.css('div.jobsearch-JobInfoHeader-subtitle div::text').getall()[-1]
+        except:
+            job_location = 'None posted'
+
         job_description_texts = response.css('div#jobDescriptionText').xpath('.//text()').getall()
         job_description = ''.join(job_description_texts)
 
