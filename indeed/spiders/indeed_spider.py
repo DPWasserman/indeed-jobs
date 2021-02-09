@@ -1,31 +1,56 @@
-from scrapy import Spider, Request
-from indeed.items import IndeedItem
 import datetime
 import re
-from urllib.parse import parse_qs, urljoin, urlparse
+from urllib.parse import quote_plus, parse_qs, unquote, urljoin, urlparse
 import logging
 
-num_pages_to_scrape = 10
+from scrapy import Spider, Request
+from indeed.items import IndeedItem
+
+NUM_PAGES_TO_SCRAPE = 1
+locations = ['New York, NY',
+             'San Francisco, CA',
+             'Los Angeles, CA',
+             'Chicago, IL',
+             'Phoenix, AZ',
+             'Charlotte, NC']
 
 class IndeedSpider(Spider):
     name = 'indeed_spider'
-    allowed_urls = ['https://www.indeed.com']
-    start_urls = ['https://www.indeed.com/jobs?q=data+scientist&l=New+York%2C+NY&sort=date',
-                   'https://www.indeed.com/jobs?q=data+scientist&l=San+Francisco%2C+CA&sort=date']
+    #allowed_urls = ['https://www.indeed.com']
+    primary_domain = 'https://www.indeed.com'
+
+    def start_requests(self):
+        url_pattern = 'https://www.indeed.com/jobs?q=data+scientist&l={}&sort=date'
+        urls = [url_pattern.format(quote_plus(location)) for location in locations]
+
+        for url in urls:
+            yield Request(url=url, callback=self.parse, dont_filter=True)
 
     def parse(self, response):
-        url_pattern = response.url + '&start={}'
-        urls = [url_pattern.format(i*10) for i in range(num_pages_to_scrape)]
+        # url_pattern = response.url + '&start={}'
+        # urls = [url_pattern.format(i*10) for i in range(NUM_PAGES_TO_SCRAPE)]
 
-        for url in urls: # Parse first two pages only
-            yield Request(url=url, callback=self.parse_jobs_page)
+        # for url in urls:
+        #     yield Request(url=url, callback=self.parse_jobs_page)
+        
+        yield Request(url=response.url, callback=self.parse_jobs_page)
+
+        page_count = 1
+        while page_count<3:
+            url = response.xpath('//a[@aria-label="Next"]/@href').get()
+            if url:
+                url = self.primary_domain + url
+                page_count += 1
+                yield Request(url=url, callback=self.parse_jobs_page)
+            else:
+                break
 
     def parse_jobs_page(self, response):
         job_pattern = '//a[contains(@class,"jobtitle")]/@href'
         jobs = response.xpath(job_pattern).getall()
 
         for job in jobs:
-            url = self.allowed_urls[0] + job
+            url = self.primary_domain + job
             response.meta['search_page_url'] = response.url
             yield Request(url=url, callback=self.parse_job_page, meta=response.meta)
 
@@ -99,6 +124,9 @@ class IndeedSpider(Spider):
         item['salary'] = data_dict['salary']
 
         # Calculated information
+        parsed = urlparse(data_dict['search_page_url'])
+        item['search_location'] = unquote(parse_qs(parsed.query).get('l')[0])
+
         parsed = urlparse(data_dict['indeed_url'])
         item['indeed_job_key'] = parse_qs(parsed.query).get('jk')[0]
 
