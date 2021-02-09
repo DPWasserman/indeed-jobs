@@ -36,7 +36,7 @@ class IndeedSpider(Spider):
         yield Request(url=response.url, callback=self.parse_jobs_page)
 
         page_count = 1
-        while page_count<3:
+        while page_count<30:
             url = response.xpath('//a[@aria-label="Next"]/@href').get()
             if url:
                 url = self.primary_domain + url
@@ -95,11 +95,17 @@ class IndeedSpider(Spider):
         response.meta['posted_when'] = posted_when
         response.meta['salary'] = salary
 
+        # if original_url:
+        #     response.meta['original_url'] = original_url
+        #     yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
+        # else: # Sometimes there is no original post link
+        #     response.meta['original_url'] = response.url
+        #     yield self.store_item(response.meta)
         if original_url:
-            yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
-        else: # Sometimes there is no original post link
+            response.meta['original_url'] = original_url
+        else:
             response.meta['original_url'] = response.url
-            yield self.store_item(response.meta)            
+        yield self.store_item(response.meta)
 
 
     def resolve_redirected_url(self, response): 
