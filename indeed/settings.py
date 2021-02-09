@@ -52,7 +52,9 @@ CONCURRENT_REQUESTS_PER_DOMAIN = 16
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
 #    'indeed.middlewares.IndeedDownloaderMiddleware': 543,
-    'indeed.middlewares.FixLocationHeaderMiddleWare': 650,
+##    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 1, # From https://stackoverflow.com/questions/4710483/scrapy-and-proxies
+    'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': None,
+    'indeed.middlewares.BetterRedirectMiddleware': 120,
     #https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.redirect
 }
 
