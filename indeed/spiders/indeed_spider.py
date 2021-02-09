@@ -6,7 +6,7 @@ import logging
 from scrapy import Spider, Request
 from indeed.items import IndeedItem
 
-NUM_PAGES_TO_SCRAPE = 1
+NUM_PAGES_TO_SCRAPE = 30 # Used to throttle the number of pages per location
 locations = ['New York, NY',
              'San Francisco, CA',
              'Los Angeles, CA',
@@ -35,8 +35,8 @@ class IndeedSpider(Spider):
         
         yield Request(url=response.url, callback=self.parse_jobs_page)
 
-        page_count = 1
-        while page_count<30:
+        page_count = 2 # Start at 2 since the first page is scraped before the loop
+        while page_count < NUM_PAGES_TO_SCRAPE:
             url = response.xpath('//a[@aria-label="Next"]/@href').get()
             if url:
                 url = self.primary_domain + url
