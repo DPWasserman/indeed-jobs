@@ -157,3 +157,7 @@ class IndeedSpider(Spider):
             item['post_date'] = post_date.date()
 
         return item
+
+    def check_captcha(self, response):
+        title = response.xpath('//title/text()').get()
+        return 'Captcha' in title
