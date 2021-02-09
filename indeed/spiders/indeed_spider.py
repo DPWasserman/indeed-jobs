@@ -6,13 +6,13 @@ import logging
 from scrapy import Spider, Request
 from indeed.items import IndeedItem
 
-NUM_PAGES_TO_SCRAPE = 30 # Used to throttle the number of pages per location
-locations = ['New York, NY',
+NUM_PAGES_TO_SCRAPE = 3 * 10 # Used to throttle the number of pages per location
+LOCATIONS = ('New York, NY',
              'San Francisco, CA',
              'Los Angeles, CA',
              'Chicago, IL',
              'Phoenix, AZ',
-             'Charlotte, NC']
+             'Charlotte, NC')
 
 class IndeedSpider(Spider):
     name = 'indeed_spider'
@@ -21,31 +21,22 @@ class IndeedSpider(Spider):
 
     def start_requests(self):
         url_pattern = 'https://www.indeed.com/jobs?q=data+scientist&l={}&sort=date'
-        urls = [url_pattern.format(quote_plus(location)) for location in locations]
+        urls = [url_pattern.format(quote_plus(location)) for location in LOCATIONS]
 
         for url in urls:
-            yield Request(url=url, callback=self.parse, dont_filter=True)
+            yield Request(url=url, callback=self.parse_results_page, dont_filter=True)
 
-    def parse(self, response):
-        # url_pattern = response.url + '&start={}'
-        # urls = [url_pattern.format(i*10) for i in range(NUM_PAGES_TO_SCRAPE)]
+    # def parse(self, response):
+    #     yield Request(url=response.url, callback=self.parse_results_page)
 
-        # for url in urls:
-        #     yield Request(url=url, callback=self.parse_jobs_page)
+    #     #url_pattern = response.url + '&start={}'
+    #     #urls = [url_pattern.format(i*10) for i in range(NUM_PAGES_TO_SCRAPE)]
+
+    #     #for url in urls:
+    #     #    yield Request(url=url, callback=self.parse_jobs_page)
         
-        yield Request(url=response.url, callback=self.parse_jobs_page)
 
-        page_count = 2 # Start at 2 since the first page is scraped before the loop
-        while page_count < NUM_PAGES_TO_SCRAPE:
-            url = response.xpath('//a[@aria-label="Next"]/@href').get()
-            if url:
-                url = self.primary_domain + url
-                page_count += 1
-                yield Request(url=url, callback=self.parse_jobs_page)
-            else:
-                break
-
-    def parse_jobs_page(self, response):
+    def parse_results_page(self, response):
         job_pattern = '//a[contains(@class,"jobtitle")]/@href'
         jobs = response.xpath(job_pattern).getall()
 
@@ -53,7 +44,22 @@ class IndeedSpider(Spider):
             url = self.primary_domain + job
             response.meta['search_page_url'] = response.url
             yield Request(url=url, callback=self.parse_job_page, meta=response.meta)
-
+        
+        url = response.xpath('//a[@aria-label="Next"]/@href').get()
+        print(f'Next url is {url}')
+        if url:
+            url = self.primary_domain + url
+            
+            parsed = urlparse(url)
+            page_num = parse_qs(parsed.query).get('start')
+            print(f'page # is {page_num} for {url}')
+            if not page_num:
+                page_num = 0
+            else:
+                page_num = int(page_num[0])
+            if page_num <= NUM_PAGES_TO_SCRAPE:
+                yield Request(url=url, callback=self.parse_results_page)
+    
     def parse_job_page(self, response):
         job_title = response.css('h1.jobsearch-JobInfoHeader-title::text').get()
 
@@ -76,7 +82,7 @@ class IndeedSpider(Spider):
         posted_when_block = response.css('div.jobsearch-JobMetadataFooter div::text').getall()
         posted_when = None
         for post in posted_when_block:
-            posted_when = re.findall(r'(Just posted|\d+ day[s]* ago)', post)
+            posted_when = re.findall(r'(Just posted|Today|\d+ day[s]* ago)', post)
             if posted_when:
                 posted_when = posted_when[0]
                 break
@@ -95,20 +101,20 @@ class IndeedSpider(Spider):
         response.meta['posted_when'] = posted_when
         response.meta['salary'] = salary
 
+        if original_url:
+            yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
+        else: # Sometimes there is no original post link
+            response.meta['original_url'] = response.url
+            yield self.store_item(response.meta)
+
         # if original_url:
         #     response.meta['original_url'] = original_url
-        #     yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
-        # else: # Sometimes there is no original post link
+        # else:
         #     response.meta['original_url'] = response.url
-        #     yield self.store_item(response.meta)
-        if original_url:
-            response.meta['original_url'] = original_url
-        else:
-            response.meta['original_url'] = response.url
-        yield self.store_item(response.meta)
+        # yield self.store_item(response.meta)
 
 
-    def resolve_redirected_url(self, response): 
+    def resolve_redirected_url(self, response): # How can I catch an error if it happens here?
         response.meta['original_url'] = response.url
         yield self.store_item(response.meta)
 
@@ -149,7 +155,7 @@ class IndeedSpider(Spider):
             item['job_salary_high'] = int(job_salary_high.replace(',',''))
 
         if data_dict['posted_when']:
-            if data_dict['posted_when'] == 'Just posted':
+            if data_dict['posted_when'] in ['Just posted','Today']:
                 days_ago = 0
             else:
                 days_ago = int(re.findall(r'(\d+)', data_dict['posted_when'])[0])
