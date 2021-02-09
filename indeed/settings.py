@@ -25,7 +25,7 @@ ROBOTSTXT_OBEY = False
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 1.5 # Set to an appropriate number
+DOWNLOAD_DELAY = .1 # Set to an appropriate number
 # The download delay setting will honor only one of:
 CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
@@ -52,7 +52,7 @@ CONCURRENT_REQUESTS_PER_DOMAIN = 16
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
 #    'indeed.middlewares.IndeedDownloaderMiddleware': 543,
-##    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 1, # From https://stackoverflow.com/questions/4710483/scrapy-and-proxies
+    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 1, # From https://stackoverflow.com/questions/4710483/scrapy-and-proxies
     'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': None,
     'indeed.middlewares.BetterRedirectMiddleware': 120,
     #https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.redirect

@@ -23,8 +23,11 @@ class IndeedSpider(Spider):
         url_pattern = 'https://www.indeed.com/jobs?q=data+scientist&l={}&sort=date'
         urls = [url_pattern.format(quote_plus(location)) for location in LOCATIONS]
 
+        proxy_dict = {'proxy':'52.227.7.173:80'}
+
         for url in urls:
-            yield Request(url=url, callback=self.parse_results_page, dont_filter=True)
+            yield Request(url=url, callback=self.parse_results_page, meta=proxy_dict)
+#            yield Request(url=url, callback=self.parse_results_page, dont_filter=True)
 
     # def parse(self, response):
     #     yield Request(url=response.url, callback=self.parse_results_page)
