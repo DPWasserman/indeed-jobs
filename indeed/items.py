@@ -27,3 +27,8 @@ class IndeedItem(scrapy.Item):
     job_salary_low = scrapy.Field()
     job_salary_high = scrapy.Field()
     post_date = scrapy.Field()
+
+
+class RedirectItem(scrapy.Item):
+    original_url = scrapy.Field()
+    redirected_url = scrapy.Field()
