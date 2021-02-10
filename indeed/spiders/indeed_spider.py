@@ -23,20 +23,10 @@ class IndeedSpider(Spider):
         url_pattern = 'https://www.indeed.com/jobs?q=data+scientist&l={}&sort=date'
         urls = [url_pattern.format(quote_plus(location)) for location in LOCATIONS]
 
-        proxy_dict = {'proxy':'52.227.7.173:80'}
+        proxy = '3.22.0.212:8080' # Chosen from https://free-proxy-list.net/
 
         for url in urls:
-            yield Request(url=url, callback=self.parse_results_page, meta=proxy_dict)
-#            yield Request(url=url, callback=self.parse_results_page, dont_filter=True)
-
-    # def parse(self, response):
-    #     yield Request(url=response.url, callback=self.parse_results_page)
-
-    #     #url_pattern = response.url + '&start={}'
-    #     #urls = [url_pattern.format(i*10) for i in range(NUM_PAGES_TO_SCRAPE)]
-
-    #     #for url in urls:
-    #     #    yield Request(url=url, callback=self.parse_jobs_page)
+            yield Request(url=url, callback=self.parse_results_page, meta={'proxy':proxy})
         
 
     def parse_results_page(self, response):
@@ -104,17 +94,17 @@ class IndeedSpider(Spider):
         response.meta['posted_when'] = posted_when
         response.meta['salary'] = salary
 
-        if original_url:
-            yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
-        else: # Sometimes there is no original post link
-            response.meta['original_url'] = response.url
-            yield self.store_item(response.meta)
-
         # if original_url:
-        #     response.meta['original_url'] = original_url
-        # else:
+        #     yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
+        # else: # Sometimes there is no original post link
         #     response.meta['original_url'] = response.url
-        # yield self.store_item(response.meta)
+        #     yield self.store_item(response.meta)
+
+        if original_url:
+            response.meta['original_url'] = original_url
+        else:
+            response.meta['original_url'] = response.url
+        yield self.store_item(response.meta)
 
 
     def resolve_redirected_url(self, response): # How can I catch an error if it happens here?
