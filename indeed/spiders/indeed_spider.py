@@ -14,7 +14,7 @@ LOCATIONS = ('New York, NY',
              'Phoenix, AZ',
              'Charlotte, NC')
 NUM_PAGES_TO_SCRAPE = 3 * 10 # When limiting results, represents the number of pages per location
-proxy = '3.22.0.212:8080'
+proxy = '3.22.0.212:8080'    # Chosen from https://free-proxy-list.net/
 
 class IndeedSpider(Spider):
     name = 'indeed_spider'
@@ -31,7 +31,6 @@ class IndeedSpider(Spider):
         url_pattern = 'https://www.indeed.com/jobs?q=data+scientist&l={}&sort=date'
         urls = [url_pattern.format(quote_plus(location)) for location in LOCATIONS]
 
-         # Chosen from https://free-proxy-list.net/
 
         for url in urls:
             yield Request(url=url, callback=self.parse_results_page, meta={'proxy':proxy})
