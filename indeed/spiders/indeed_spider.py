@@ -1,29 +1,36 @@
 import datetime
+import pandas as pd
 import re
 from urllib.parse import quote_plus, parse_qs, unquote, urljoin, urlparse
 import logging
 
 from scrapy import Spider, Request
-from indeed.items import IndeedItem
+from indeed.items import IndeedItem, RedirectItem
 
-NUM_PAGES_TO_SCRAPE = 3 * 10 # Used to throttle the number of pages per location
 LOCATIONS = ('New York, NY',
              'San Francisco, CA',
              'Los Angeles, CA',
              'Chicago, IL',
              'Phoenix, AZ',
              'Charlotte, NC')
+NUM_PAGES_TO_SCRAPE = 3 * 10 # When limiting results, represents the number of pages per location
+proxy = '3.22.0.212:8080'
 
 class IndeedSpider(Spider):
     name = 'indeed_spider'
-    #allowed_urls = ['https://www.indeed.com']
+    custom_settings = {
+        'ITEM_PIPELINES': {
+        '__main__.DuplicatesPipeline': 250,
+        '__main__.WriteItemPipeline': 300,
+    }
+
     primary_domain = 'https://www.indeed.com'
 
     def start_requests(self):
         url_pattern = 'https://www.indeed.com/jobs?q=data+scientist&l={}&sort=date'
         urls = [url_pattern.format(quote_plus(location)) for location in LOCATIONS]
 
-        proxy = '3.22.0.212:8080' # Chosen from https://free-proxy-list.net/
+         # Chosen from https://free-proxy-list.net/
 
         for url in urls:
             yield Request(url=url, callback=self.parse_results_page, meta={'proxy':proxy})
@@ -39,18 +46,16 @@ class IndeedSpider(Spider):
             yield Request(url=url, callback=self.parse_job_page, meta=response.meta)
         
         url = response.xpath('//a[@aria-label="Next"]/@href').get()
-        print(f'Next url is {url}')
         if url:
             url = self.primary_domain + url
             
             parsed = urlparse(url)
             page_num = parse_qs(parsed.query).get('start')
-            print(f'page # is {page_num} for {url}')
             if not page_num:
                 page_num = 0
             else:
                 page_num = int(page_num[0])
-            if page_num <= NUM_PAGES_TO_SCRAPE:
+            if page_num <= NUM_PAGES_TO_SCRAPE or True: # Change this line to throttle the number of pages
                 yield Request(url=url, callback=self.parse_results_page)
     
     def parse_job_page(self, response):
@@ -94,21 +99,10 @@ class IndeedSpider(Spider):
         response.meta['posted_when'] = posted_when
         response.meta['salary'] = salary
 
-        # if original_url:
-        #     yield Request(url=original_url, callback=self.resolve_redirected_url, meta=response.meta)
-        # else: # Sometimes there is no original post link
-        #     response.meta['original_url'] = response.url
-        #     yield self.store_item(response.meta)
-
         if original_url:
             response.meta['original_url'] = original_url
         else:
             response.meta['original_url'] = response.url
-        yield self.store_item(response.meta)
-
-
-    def resolve_redirected_url(self, response): # How can I catch an error if it happens here?
-        response.meta['original_url'] = response.url
         yield self.store_item(response.meta)
 
 
@@ -160,3 +154,26 @@ class IndeedSpider(Spider):
     def check_captcha(self, response):
         title = response.xpath('//title/text()').get()
         return 'Captcha' in title
+
+class RedirectSpider(Spider):
+    name = 'redirect_spider'
+    custom_settings = {
+        'ITEM_PIPELINES': {
+        '__main__.WriteItemPipeline': 300,
+    }
+
+    def start_requests(self):
+        results_df = pd.read_csv('indeed.csv')
+        crawl = (results_df['original_url'] != results_df['indeed_url'])
+        urls = results_df.loc[crawl, 'original_url']
+
+        for url in urls:
+            yield Request(url=url, callback=self.follow_redirect, meta={'original_url':url, 'proxy':proxy})
+
+    def follow_redirect(self, response):
+        redirected_url = response.url
+
+        item = RedirectItem()
+        item['original_url'] = response.meta['original_url']
+        item['redirected_url'] = redirected_url
+        yield item
