@@ -80,7 +80,7 @@ class IndeedSpider(Spider):
         posted_when_block = response.css('div.jobsearch-JobMetadataFooter div::text').getall()
         posted_when = None
         for post in posted_when_block:
-            posted_when = re.findall(r'(Just posted|Today|\d+ day[s]* ago)', post)
+            posted_when = re.findall(r'(Just posted|Today|\d+[+]* day[s]* ago)', post)
             if posted_when:
                 posted_when = posted_when[0]
                 break
