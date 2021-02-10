@@ -66,11 +66,10 @@ DOWNLOADER_MIDDLEWARES = {
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-ITEM_PIPELINES = {
-    'indeed.pipelines.DuplicatesPipeline': 250,
-#    'indeed.pipelines.CleansePipeline': 200,
-    'indeed.pipelines.WriteItemPipeline': 300,
-}
+# ITEM_PIPELINES = {
+#     'indeed.pipelines.DuplicatesPipeline': 250,
+#     'indeed.pipelines.WriteItemPipeline': 300,
+# }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
