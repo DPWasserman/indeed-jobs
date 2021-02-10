@@ -20,8 +20,9 @@ class IndeedSpider(Spider):
     name = 'indeed_spider'
     custom_settings = {
         'ITEM_PIPELINES': {
-        '__main__.DuplicatesPipeline': 250,
-        '__main__.WriteItemPipeline': 300,
+        'indeed.pipelines.DuplicatesPipeline': 250,
+        'indeed.pipelines.WriteItemPipeline': 300,
+        }
     }
 
     primary_domain = 'https://www.indeed.com'
@@ -155,15 +156,17 @@ class IndeedSpider(Spider):
         title = response.xpath('//title/text()').get()
         return 'Captcha' in title
 
+
 class RedirectSpider(Spider):
     name = 'redirect_spider'
     custom_settings = {
         'ITEM_PIPELINES': {
-        '__main__.WriteItemPipeline': 300,
+        'indeed.pipelines.WriteItemPipeline': 300,
+        }
     }
 
     def start_requests(self):
-        results_df = pd.read_csv('indeed.csv')
+        results_df = pd.read_csv('indeed_spider.csv')
         crawl = (results_df['original_url'] != results_df['indeed_url'])
         urls = results_df.loc[crawl, 'original_url']
 
