@@ -20,7 +20,9 @@ For detailed insights, please see the Jupyter Notebooks in this repo.
 1. Enter in the desired locations and a desirable proxy in the config.py file in the indeed sub-folder
     - For a good proxy, refer to https://www.us-proxy.org/
 2. Run the main scraper to get the job reqs: scrapy crawl indeed_spider
+    - Results will be placed in the data sub-folder as indeed_spider.csv
 3. Run the secondary scraper to resolve the original posting URL: scrapy crawl redirect_spider
+    - Results will be placed in the data sub-folder as redirect_spider.csv
 4. Open the two Jupyter Notebooks to see the analysis:
     - Job_Description_Analysis.ipynb
     - Job_Analysis.ipynb
