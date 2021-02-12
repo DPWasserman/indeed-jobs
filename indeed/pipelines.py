@@ -9,7 +9,8 @@
 from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 from scrapy.exporters import CsvItemExporter
-
+import os
+from pathlib import Path
 
 class DuplicatesPipeline(object):
 
@@ -23,7 +24,7 @@ class DuplicatesPipeline(object):
         else:
             self.ids_seen.add(adapter['indeed_job_key'])
             return item
-            
+
 
 class WriteItemPipeline(object):
 
@@ -31,7 +32,10 @@ class WriteItemPipeline(object):
         pass
 
     def open_spider(self, spider):
-        self.filename = f'{spider.name}.csv'
+        if not os.path.exists('data/'):
+            os.mkdir('data')
+        data_path = Path('data')
+        self.filename = data_path / f'{spider.name}.csv'
         self.csvfile = open(self.filename, 'wb')
         self.exporter = CsvItemExporter(self.csvfile)
         self.exporter.start_exporting()
