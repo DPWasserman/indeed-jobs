@@ -1,0 +1,16 @@
+"""
+This file is for configuration variables such as locations to scrape and the proxy to use.
+"""
+LOCATIONS = ('New York, NY',
+             'San Francisco, CA',
+             'Los Angeles, CA',
+             'Chicago, IL',
+             'Phoenix, AZ',
+             'Charlotte, NC',
+             'Boston, MA',
+             'Austin, TX',
+             'Seattle, WA',
+             'Washington, DC',
+             'Atlanta, GA')  # Inspired by https://www.datascienceweekly.org/articles/where-are-data-science-jobs-located
+
+PROXY = '3.22.0.212:8080'    # Chosen from https://free-proxy-list.net/
