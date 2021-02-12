@@ -140,6 +140,7 @@ class IndeedSpider(Spider):
         return item
 
     def check_captcha(self, response):
+        """ Function that checks to see if a CAPTCHA is in use in the page """
         title = response.xpath('//title/text()').get()
         return 'Captcha' in title
 
