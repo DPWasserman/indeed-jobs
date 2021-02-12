@@ -24,12 +24,15 @@ class IndeedSpider(Spider):
         url_pattern = 'https://www.indeed.com/jobs?q=data+scientist&l={}&sort=date'
         urls = [url_pattern.format(quote_plus(location)) for location in config.LOCATIONS]
 
-
         for url in urls:
-            yield Request(url=url, callback=self.parse_results_page, meta={'proxy':config.PROXY})
+            yield Request(url=url, callback=self.parse_results_page, meta={'proxy':config.PROXY}, dont_filter=True)
         
 
     def parse_results_page(self, response):
+        if self.check_captcha(response):
+            logging.error(f'CAPTCHA detected at {response.url}\nRetrying!')
+            yield Request(url=response.url, callback=self.parse_results_page, meta=response.meta)
+
         job_pattern = '//a[contains(@class,"jobtitle")]/@href'
         jobs = response.xpath(job_pattern).getall()
 
@@ -87,7 +90,7 @@ class IndeedSpider(Spider):
         if original_url:
             response.meta['original_url'] = original_url
         else:
-            response.meta['original_url'] = response.url
+            response.meta['original_url'] = None
         yield self.store_item(response.meta)
 
 
@@ -114,7 +117,7 @@ class IndeedSpider(Spider):
         parsed = urlparse(data_dict['indeed_url'])
         try:
             item['indeed_job_key'] = parse_qs(parsed.query).get('jk')[0]
-        except TypeError: 
+        except (TypeError, KeyError): 
             logging.error(f'Problem with {data_dict["indeed_url"]}')
 
         if data_dict['company_reviews']:
@@ -155,7 +158,7 @@ class RedirectSpider(Spider):
 
     def start_requests(self):
         results_df = pd.read_csv('indeed_spider.csv')
-        crawl = (results_df['original_url'] != results_df['indeed_url'])
+        crawl = (np.logical_not(results_df['original_url'].isna()))
         urls = results_df.loc[crawl, 'original_url']
 
         for url in urls:
