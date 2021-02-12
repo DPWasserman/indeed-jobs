@@ -18,7 +18,7 @@ For detailed insights, please see the Jupyter Notebooks in this repo.
 
 ## Setup Instructions
 1. Enter in the desired locations and a desirable proxy in the config.py file in the indeed sub-folder
-    - For a good proxy, refer to https://www.us-proxy.org/
+    - For a good, free proxy, refer to https://www.us-proxy.org/
 2. Run the main scraper to get the job reqs: scrapy crawl indeed_spider
     - Results will be placed in the data sub-folder as indeed_spider.csv
 3. Run the secondary scraper to resolve the original posting URL: scrapy crawl redirect_spider
