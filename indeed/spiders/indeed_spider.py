@@ -6,15 +6,8 @@ import logging
 
 from scrapy import Spider, Request
 from indeed.items import IndeedItem, RedirectItem
+from indeed import config
 
-LOCATIONS = ('New York, NY',
-             'San Francisco, CA',
-             'Los Angeles, CA',
-             'Chicago, IL',
-             'Phoenix, AZ',
-             'Charlotte, NC')
-NUM_PAGES_TO_SCRAPE = 3 * 10 # When limiting results, represents the number of pages per location
-proxy = '3.22.0.212:8080'    # Chosen from https://free-proxy-list.net/
 
 class IndeedSpider(Spider):
     name = 'indeed_spider'
@@ -29,11 +22,11 @@ class IndeedSpider(Spider):
 
     def start_requests(self):
         url_pattern = 'https://www.indeed.com/jobs?q=data+scientist&l={}&sort=date'
-        urls = [url_pattern.format(quote_plus(location)) for location in LOCATIONS]
+        urls = [url_pattern.format(quote_plus(location)) for location in config.LOCATIONS]
 
 
         for url in urls:
-            yield Request(url=url, callback=self.parse_results_page, meta={'proxy':proxy})
+            yield Request(url=url, callback=self.parse_results_page, meta={'proxy':config.PROXY})
         
 
     def parse_results_page(self, response):
@@ -48,15 +41,7 @@ class IndeedSpider(Spider):
         url = response.xpath('//a[@aria-label="Next"]/@href').get()
         if url:
             url = self.primary_domain + url
-            
-            parsed = urlparse(url)
-            page_num = parse_qs(parsed.query).get('start')
-            if not page_num:
-                page_num = 0
-            else:
-                page_num = int(page_num[0])
-            if page_num <= NUM_PAGES_TO_SCRAPE or True: # Change this line to throttle the number of pages
-                yield Request(url=url, callback=self.parse_results_page)
+            yield Request(url=url, callback=self.parse_results_page)
     
     def parse_job_page(self, response):
         job_title = response.css('h1.jobsearch-JobInfoHeader-title::text').get()
@@ -127,7 +112,10 @@ class IndeedSpider(Spider):
         item['search_location'] = unquote(parse_qs(parsed.query).get('l')[0])
 
         parsed = urlparse(data_dict['indeed_url'])
-        item['indeed_job_key'] = parse_qs(parsed.query).get('jk')[0]
+        try:
+            item['indeed_job_key'] = parse_qs(parsed.query).get('jk')[0]
+        except TypeError: 
+            logging.error(f'Problem with {data_dict["indeed_url"]}')
 
         if data_dict['company_reviews']:
             num_stars, _, num_reviews = re.findall(r'^([\d.]+) out of (\d) from ([\d,]+) employee rating', data_dict['company_reviews'])[0]
@@ -170,7 +158,7 @@ class RedirectSpider(Spider):
         urls = results_df.loc[crawl, 'original_url']
 
         for url in urls:
-            yield Request(url=url, callback=self.follow_redirect, meta={'original_url':url, 'proxy':proxy})
+            yield Request(url=url, callback=self.follow_redirect, meta={'original_url':url, 'proxy':config.PROXY})
 
     def follow_redirect(self, response):
         redirected_url = response.url
