@@ -13,5 +13,6 @@ LOCATIONS = ('New York, NY',
              'Washington, DC',
              'Atlanta, GA')  # Inspired by https://www.datascienceweekly.org/articles/where-are-data-science-jobs-located
 
-PROXY = '3.22.0.212:8080'    # Chosen from https://free-proxy-list.net/
-                             # Ensure that Country is United States, HTTPS is allowed (YES), and Anonymity is set to Elite Proxy
+PROXY = '208.80.28.208:8080'
+ # Chosen from https://free-proxy-list.net/
+ # Ensure that Country is United States, HTTPS is allowed (YES), and Anonymity is set to Elite Proxy
