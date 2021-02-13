@@ -31,7 +31,7 @@ class IndeedSpider(Spider):
     def parse_results_page(self, response):
         if self.check_captcha(response):
             logging.error(f'CAPTCHA detected at {response.url}\nRetrying!')
-            yield Request(url=response.url, callback=self.parse_results_page, meta=response.meta)
+            yield Request(url=response.url, callback=self.parse_results_page, meta=response.meta, dont_filter=True)
 
         job_pattern = '//a[contains(@class,"jobtitle")]/@href'
         jobs = response.xpath(job_pattern).getall()
