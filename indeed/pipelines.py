@@ -19,6 +19,8 @@ class DuplicatesPipeline(object):
 
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
+        if 'indeed_job_key' not in adapter.keys():
+            raise DropItem(f"Missing job key: {item!r}")
         if adapter['indeed_job_key'] in self.ids_seen:
             raise DropItem(f"Duplicate item found: {item!r}")
         else:
