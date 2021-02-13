@@ -30,7 +30,7 @@ class IndeedSpider(Spider):
 
     def parse_results_page(self, response):
         if self.check_captcha(response):
-            logging.error(f'CAPTCHA detected at {response.url}\nRetrying!')
+            logging.error(f'CAPTCHA detected at {response.url}')
             return None
 
         job_pattern = '//a[contains(@class,"jobtitle")]/@href'
