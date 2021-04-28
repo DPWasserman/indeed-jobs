@@ -121,7 +121,7 @@ class IndeedSpider(Spider):
             logging.error(f'Problem with {data_dict["indeed_url"]}')
 
         if data_dict['company_reviews']:
-            num_stars, _, num_reviews = re.findall(r'^([\d.]+) out of (\d) from ([\d,]+) employee rating', data_dict['company_reviews'])[0]
+            num_stars, _, num_reviews = re.findall(r'^([\d.]+) out of (\d) stars from ([\d,]+) employee rating', data_dict['company_reviews'])[0]
             item['num_stars'] = float(num_stars)
             item['num_reviews'] = int(num_reviews.replace(',',''))
 
