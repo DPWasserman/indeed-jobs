@@ -1,4 +1,5 @@
 import datetime
+import numpy as np
 import pandas as pd
 import re
 from urllib.parse import quote_plus, parse_qs, unquote, urljoin, urlparse
