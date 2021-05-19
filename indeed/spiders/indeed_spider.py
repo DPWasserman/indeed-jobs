@@ -21,8 +21,8 @@ class IndeedSpider(Spider):
     primary_domain = 'https://www.indeed.com'
 
     def start_requests(self):
-        url_pattern = 'https://www.indeed.com/jobs?q=data+scientist&l={}&sort=date'
-        urls = [url_pattern.format(quote_plus(location)) for location in config.LOCATIONS]
+        url_pattern = 'https://www.indeed.com/jobs?q={}&l={}&sort=date'
+        urls = [url_pattern.format(quote_plus(config.JOB_QUERY), quote_plus(location)) for location in config.LOCATIONS]
 
         for url in urls:
             yield Request(url=url, callback=self.parse_results_page, meta={'proxy':config.PROXY}, dont_filter=True)
