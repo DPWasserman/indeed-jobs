@@ -25,7 +25,7 @@ For detailed insights, please see the PPTX file in this repo.
     - Results will be placed in the data sub-folder as indeed_spider.csv
 3. Run the secondary scraper to resolve the original posting URL: scrapy crawl redirect_spider
     - Results will be placed in the data sub-folder as redirect_spider.csv
-4. Open the two Jupyter Notebooks to see the analysis:
+4. Open the three Jupyter Notebooks to see the analysis:
     - Job_Description_Word_Cloud.ipynb : Produces a na&#239;ve word cloud
     - Job_Statistics_Calculations.ipynb : Produces statistical analysis from posting metadata
     - Job_Text_Analysis.ipynb : Produces analysis from natural language processing from the job descriptions
