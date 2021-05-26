@@ -18,14 +18,14 @@ Additional cities for later consideration:
 
 For detailed insights, please see the PPTX file in this repo.
 
-## Setup Instructions
-1. Enter in the desired locations and a desirable proxy in the config.py file in the indeed sub-folder
+## How to Run the Scraper
+1. Enter in the desired locations and a desirable proxy in the `config.py` file in the `indeed` sub-folder
     - For a good, free proxy, refer to https://www.us-proxy.org/
-2. Run the main scraper to get the job reqs: `scrapy crawl indeed_spider`
-    - Results will be placed in the data sub-folder as indeed_spider.csv
-3. Run the secondary scraper to resolve the original posting URL: scrapy crawl redirect_spider
-    - Results will be placed in the data sub-folder as redirect_spider.csv
-4. Open the three Jupyter Notebooks to see the analysis:
-    - Job_Description_Word_Cloud.ipynb : Produces a na&#239;ve word cloud
-    - Job_Statistics_Calculations.ipynb : Produces statistical analysis from posting metadata
-    - Job_Text_Analysis.ipynb : Produces analysis from natural language processing from the job descriptions
+2. Run the main scraper to get the job postings: `scrapy crawl indeed_spider`
+    - Results will be placed in the `data` sub-folder as `indeed_spider.csv`
+3. Run the secondary scraper to resolve the original posting URL: `scrapy crawl redirect_spider`
+    - Results will be placed in the `data` sub-folder as `redirect_spider.csv`
+4. Open the three Jupyter Notebooks to analyze the results:
+    - **Job_Description_Word_Cloud.ipynb** : Produces a na&#239;ve word cloud
+    - **Job_Statistics_Calculations.ipynb** : Produces statistical analysis from posting metadata
+    - **Job_Text_Analysis.ipynb** : Produces analysis from natural language processing from the job descriptions
