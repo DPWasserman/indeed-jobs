@@ -1,0 +1,6 @@
+nltk
+numpy
+pandas
+plotly
+Scrapy
+textblob
