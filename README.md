@@ -16,7 +16,7 @@ Additional cities for later consideration:
 - Seattle, WA
 - Washington, DC
 
-For detailed insights, please see the PPTX file in this repo.
+For detailed insights, please see the PPTX files in this repo.
 
 ## How to Run the Scraper
 1. Enter in the desired locations and a desirable proxy in the `config.py` file in the `indeed` sub-folder
